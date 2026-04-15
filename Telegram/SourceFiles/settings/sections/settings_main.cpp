@@ -36,6 +36,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "lang/lang_instance.h"
 #include "lang/lang_keys.h"
 #include "lottie/lottie_icon.h"
+#include "menu/menu_checked_action.h"
 #include "main/main_account.h"
 #include "main/main_app_config.h"
 #include "main/main_domain.h"
@@ -113,6 +114,7 @@ public:
 private:
 	void setupChildGeometry();
 	void initViewers();
+	void updatePhoneText();
 	void refreshNameGeometry(int newWidth);
 	void refreshIdGeometry(int newWidth);
 	void refreshUsernameGeometry(int newWidth);
@@ -127,6 +129,7 @@ private:
 	object_ptr<Ui::UserpicButton> _userpic;
 	object_ptr<Ui::FlatLabel> _name = { nullptr };
 	object_ptr<Ui::FlatLabel> _id = { nullptr };
+	QString _idText;
 	object_ptr<Ui::FlatLabel> _username = { nullptr };
 	object_ptr<Ui::IconButton> _qrButton = { nullptr };
 
@@ -194,6 +197,19 @@ Cover::Cover(
 		} else {
 			_id->fillContextMenu(request);
 		}
+		const auto hidden = _user->session().settings().phoneNumberHidden();
+		const auto toggle = [=] {
+			_user->session().settings().setPhoneNumberHidden(
+				!_user->session().settings().phoneNumberHidden());
+			_user->session().saveSettingsDelayed();
+			updatePhoneText();
+		};
+		Menu::AddCheckedAction(
+			request.menu,
+			tr::lng_context_spoiler_effect(tr::now),
+			toggle,
+			&st::menuIconSpoiler,
+			hidden);
 	};
 	_id->setContextMenuHook(hook);
 
@@ -278,8 +294,8 @@ void Cover::initViewers() {
 	rpl::single(
 		tr::marked(IDString(_user))
 	) | rpl::on_next([=](const TextWithEntities &value) {
-		_id->setText(value.text);
-		refreshIdGeometry(width());
+		_idText = value.text;
+		updatePhoneText();
 	}, lifetime());
 
 	Info::Profile::UsernameValue(
@@ -333,6 +349,16 @@ void Cover::refreshNameGeometry(int newWidth) {
 			   ? (_badge.widget()->width() + st::infoVerifiedCheckPosition.x())
 			   : 0);
 	_exteraBadge.move(exteraBadgeLeft, badgeTop, badgeBottom);
+}
+
+void Cover::updatePhoneText() {
+	if (_user->session().settings().phoneNumberHidden()) {
+		_id->setMarkedText(
+			Ui::Text::Wrapped({ _idText }, EntityType::Spoiler));
+	} else {
+		_id->setText(_idText);
+	}
+	refreshIdGeometry(width());
 }
 
 void Cover::refreshIdGeometry(int newWidth) {
