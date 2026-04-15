@@ -19,6 +19,10 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 #include "storage/storage_account.h"
 #include "storage/file_download.h"
 #include "core/application.h"
+#include "core/core_settings.h"
+#include "core/core_settings_proxy.h"
+#include "mtproto/mtproto_proxy_data.h"
+#include "ayu/ayu_settings.h"
 
 namespace {
 
@@ -322,6 +326,16 @@ void PhotoData::load(
 		Data::FileOrigin origin,
 		LoadFromCloudSetting fromCloud,
 		bool autoLoading) {
+	const auto &ayuSettings = AyuSettings::getInstance();
+	if (ayuSettings.blockMediaWithoutProxy()) {
+		const auto &proxy = Core::App().settings().proxy();
+		const auto proxyEnabled = proxy.isEnabled();
+		const auto proxyData = proxy.selected();
+		const auto isMtproto = proxyData.type == MTP::ProxyData::Type::Mtproto;
+		if (!proxyEnabled || !isMtproto) {
+			return;
+		}
+	}
 	const auto valid = validSizeIndex(size);
 	const auto existing = existingSizeIndex(size);
 

@@ -1014,6 +1014,30 @@ void AyuSettings::setSingleCornerRadius(bool val) {
 	save();
 }
 
+void AyuSettings::setBlockMediaWithoutProxy(bool val) {
+	if (_blockMediaWithoutProxy.current() == val) return;
+	_blockMediaWithoutProxy = val;
+	save();
+}
+
+void AyuSettings::setCustomAiApiUrl(const QString &val) {
+	if (_customAiApiUrl.current() == val) return;
+	_customAiApiUrl = val;
+	save();
+}
+
+void AyuSettings::setCustomAiApiKey(const QString &val) {
+	if (_customAiApiKey.current() == val) return;
+	_customAiApiKey = val;
+	save();
+}
+
+void AyuSettings::setCustomAiModel(const QString &val) {
+	if (_customAiModel.current() == val) return;
+	_customAiModel = val;
+	save();
+}
+
 void to_json(nlohmann::json &j, const AyuSettings &s) {
 	std::map<std::string, GhostModeAccountSettings> ghostAccounts;
 	for (const auto &[key, value] : s._ghostAccounts) {
@@ -1106,6 +1130,10 @@ void to_json(nlohmann::json &j, const AyuSettings &s) {
 		{"crashReporting", s._crashReporting.current()},
 		{"avatarCorners", s._avatarCorners.current()},
 		{"singleCornerRadius", s._singleCornerRadius.current()},
+		{"blockMediaWithoutProxy", s._blockMediaWithoutProxy.current()},
+		{"customAiApiUrl", s._customAiApiUrl.current()},
+		{"customAiApiKey", s._customAiApiKey.current()},
+		{"customAiModel", s._customAiModel.current()},
 		{"messageShotSettings", s._messageShotSettings}
 	};
 }
@@ -1206,6 +1234,10 @@ void from_json(const nlohmann::json &j, AyuSettings &s) {
 	s._crashReporting = j.value("crashReporting", defaults._crashReporting.current());
 	s._avatarCorners = j.value("avatarCorners", defaults._avatarCorners.current());
 	s._singleCornerRadius = j.value("singleCornerRadius", defaults._singleCornerRadius.current());
+	s._blockMediaWithoutProxy = j.value("blockMediaWithoutProxy", defaults._blockMediaWithoutProxy.current());
+	s._customAiApiUrl = j.value("customAiApiUrl", defaults._customAiApiUrl.current());
+	s._customAiApiKey = j.value("customAiApiKey", defaults._customAiApiKey.current());
+	s._customAiModel = j.value("customAiModel", defaults._customAiModel.current());
 
 	if (j.contains("messageShotSettings") && j["messageShotSettings"].is_object()) {
 		j["messageShotSettings"].get_to(s._messageShotSettings);

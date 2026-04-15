@@ -8012,6 +8012,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "ayu_SupportBoxSendProofInfo" = "Send a photo of the payment confirmation to **{item}**. Make sure the photo clearly shows the amount, date, and time of the transfer.";
 "ayu_SupportBoxReceiveBadgeHeader" = "Receive Your Badge";
 "ayu_SupportBoxReceiveBadgeInfo" = "After payment verification, you will receive a unique badge that will be displayed on your profile and visible to other users.";
+"ayu_BlockMediaWithoutProxy" = "Block media without MTProto proxy";
 "ayu_CrashReporting" = "Crash Reporting";
 "ayu_CrashReportingDescription" = "When this option is enabled, you'll be prompted to send a report after the app crashes. You can decide whether to send it or not.";
 "ayu_ResetSettings" = "Reset Settings";
@@ -8323,3 +8324,17 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 "ayu_AboutText1" = "ToS breaking Telegram client based on {api_link}.";
 "ayu_UpdateAyuGram" = "Update AyuGram";
 "ayu_UtilityRestartRequired" = "The app will close in 5 seconds.";
+"ayu_CustomAiApiUrl" = "AI API URL";
+"ayu_CustomAiApiKey" = "AI API key";
+"ayu_CustomAiModel" = "AI model name";
+"ayu_AiSettings" = "AI Settings";
+"ayu_AiSummarize" = "Summarize with AI";
+"ayu_AiSummarizeChat" = "Summarize last messages";
+"ayu_AiSummarizeMessages" = "How many messages to summarize?";
+"ayu_AiProcessing" = "Processing...";
+"ayu_AiError" = "AI request failed: {error}";
+"ayu_AiNoApiKey" = "Please configure AI API key in AyuGram settings";
+"ayu_AiFixSpelling" = "Fix spelling";
+"ayu_AiMakeFormal" = "Make formal";
+"ayu_AiMakeFriendly" = "Make friendly";
+"ayu_AiImproveText" = "Improve text";
