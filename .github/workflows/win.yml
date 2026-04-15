@@ -19,6 +19,7 @@ jobs:
 
     env:
       TBUILD: "D:\\TBuild"
+      CMAKE_GENERATOR: Ninja Multi-Config
 
     steps:
       - name: Checkout
@@ -31,7 +32,6 @@ jobs:
         shell: bash
         run: |
           echo "libs=$(sha256sum Telegram/build/prepare/prepare.py | cut -d' ' -f1)" >> $GITHUB_OUTPUT
-          echo "thirdparty=$(sha256sum .gitmodules | cut -d' ' -f1)" >> $GITHUB_OUTPUT
 
       - name: Prepare build directories
         shell: cmd
@@ -65,23 +65,36 @@ jobs:
         with:
           python-version: '3.10'
 
+      - name: Setup Ninja
+        uses: seanmiddleditch/gha-setup-ninja@master
+
       - name: Setup NuGet
         shell: cmd
         run: |
           nuget sources add -Name aspect -Source https://pkgs.dev.azure.com/aspect-build/aspect/_packaging/aspect/nuget/v3/index.json 2>nul
           exit /b 0
 
-      - name: Cache ThirdParty
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.TBUILD }}/ThirdParty
-          key: win-x64-thirdparty-${{ steps.cache-keys.outputs.thirdparty }}
-
       - name: Cache Libraries
         uses: actions/cache@v4
         with:
           path: ${{ env.TBUILD }}/Libraries
-          key: win-x64-libraries-${{ steps.cache-keys.outputs.libs }}
+          key: win-x64-libs-ninja-${{ steps.cache-keys.outputs.libs }}
+          restore-keys: |
+            win-x64-libs-ninja-
+
+      - name: Cache ThirdParty
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.TBUILD }}/ThirdParty
+          key: win-x64-thirdparty-v1
+          restore-keys: |
+            win-x64-thirdparty-
+
+      - name: Free disk space
+        shell: pwsh
+        run: |
+          if (Test-Path "C:\Program Files\dotnet") { Remove-Item -Recurse -Force "C:\Program Files\dotnet" -ErrorAction SilentlyContinue }
+          if (Test-Path "C:\Android") { Remove-Item -Recurse -Force "C:\Android" -ErrorAction SilentlyContinue }
 
       - name: Prepare libraries
         shell: cmd
@@ -97,14 +110,12 @@ jobs:
           configure.bat x64 ^
             -D TDESKTOP_API_ID=2040 ^
             -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 ^
-            -D CMAKE_CONFIGURATION_TYPES=Debug ^
-            -D DESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
-            -D DESKTOP_APP_DISABLE_CRASH_REPORTS=ON
+            -D CMAKE_CONFIGURATION_TYPES=Debug
 
       - name: Build
         shell: cmd
         run: |
-          cmake --build %TBUILD%\tdesktop\out --config Debug --parallel --target Telegram
+          cmake --build %TBUILD%\tdesktop\out --config Debug --parallel
 
       - name: Collect artifacts
         shell: cmd
