@@ -17,9 +17,7 @@ apply_patch() {
     echo "Applying patch to $submodule..."
     cd "$submodule_path"
     if git apply --check "$SCRIPT_DIR/$patch" 2>/dev/null; then
-        git apply "$SCRIPT_DIR/$patch"
-        git add -A
-        git commit -m "feat: AyuGram changes" --author="ZavaruKitsu <alexeyzavar@gmail.com>"
+        git apply --whitespace=nowarn "$SCRIPT_DIR/$patch"
         echo "  Done."
     else
         echo "  Patch already applied or conflicts detected, skipping."
