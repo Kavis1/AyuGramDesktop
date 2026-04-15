@@ -21,28 +21,29 @@ jobs:
       TBUILD: "D:\\TBuild"
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Compute cache keys
+        id: cache-keys
+        shell: bash
+        run: |
+          echo "libs=$(sha256sum Telegram/build/prepare/prepare.py | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+          echo "thirdparty=$(sha256sum .gitmodules | cut -d' ' -f1)" >> $GITHUB_OUTPUT
+
       - name: Prepare build directories
         shell: cmd
         run: |
           mkdir %TBUILD%
           mkdir %TBUILD%\ThirdParty
           mkdir %TBUILD%\Libraries
-
-      - name: Checkout
-        uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          path: tdesktop
-
-      - name: Move repo to build path
-        shell: cmd
-        run: |
-          move tdesktop %TBUILD%\tdesktop
+          mklink /J %TBUILD%\tdesktop "%CD%"
 
       - name: Apply lib_ui patches
         shell: bash
         run: |
-          cd "$TBUILD/tdesktop"
           if [ -f Telegram/patches/apply_patches.sh ]; then
             bash Telegram/patches/apply_patches.sh
           fi
@@ -51,7 +52,7 @@ jobs:
         id: sdk
         shell: bash
         run: |
-          echo "version=$(grep -oP '\d+\.\d+\.\d+\.\d+' $TBUILD/tdesktop/docs/building-win-x64.md | head -1)" >> $GITHUB_OUTPUT
+          echo "version=$(grep -oP '\d+\.\d+\.\d+\.\d+' docs/building-win-x64.md | head -1)" >> $GITHUB_OUTPUT
 
       - name: Setup MSVC
         uses: ilammy/msvc-dev-cmd@v1.13.0
@@ -67,24 +68,24 @@ jobs:
       - name: Setup NuGet
         shell: cmd
         run: |
-          nuget sources add -Name aspect -Source https://pkgs.dev.azure.com/aspect-build/aspect/_packaging/aspect/nuget/v3/index.json 2>nul || echo ok
+          nuget sources add -Name aspect -Source https://pkgs.dev.azure.com/aspect-build/aspect/_packaging/aspect/nuget/v3/index.json 2>nul
+          exit /b 0
 
       - name: Cache ThirdParty
         uses: actions/cache@v4
         with:
           path: ${{ env.TBUILD }}/ThirdParty
-          key: win-x64-thirdparty-${{ hashFiles('tdesktop/.gitmodules') }}
+          key: win-x64-thirdparty-${{ steps.cache-keys.outputs.thirdparty }}
 
       - name: Cache Libraries
-        id: cache-libs
         uses: actions/cache@v4
         with:
           path: ${{ env.TBUILD }}/Libraries
-          key: win-x64-libraries-${{ hashFiles('tdesktop/Telegram/build/prepare/prepare.py') }}
+          key: win-x64-libraries-${{ steps.cache-keys.outputs.libs }}
 
       - name: Prepare libraries
-        if: steps.cache-libs.outputs.cache-hit != 'true'
         shell: cmd
+        timeout-minutes: 120
         run: |
           cd %TBUILD%
           tdesktop\Telegram\build\prepare\win.bat skip-release silent
