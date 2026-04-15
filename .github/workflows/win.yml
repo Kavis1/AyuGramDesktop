@@ -19,7 +19,6 @@ jobs:
 
     env:
       TBUILD: "D:\\TBuild"
-      CMAKE_GENERATOR: Ninja Multi-Config
 
     steps:
       - name: Checkout
@@ -78,15 +77,15 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.TBUILD }}/Libraries
-          key: win-x64-libs-ninja-${{ steps.cache-keys.outputs.libs }}
+          key: win-x64-libs-v2-${{ steps.cache-keys.outputs.libs }}
           restore-keys: |
-            win-x64-libs-ninja-
+            win-x64-libs-v2-
 
       - name: Cache ThirdParty
         uses: actions/cache@v4
         with:
           path: ${{ env.TBUILD }}/ThirdParty
-          key: win-x64-thirdparty-v1
+          key: win-x64-thirdparty-v2
           restore-keys: |
             win-x64-thirdparty-
 
@@ -103,14 +102,19 @@ jobs:
           cd %TBUILD%
           tdesktop\Telegram\build\prepare\win.bat skip-release silent
 
-      - name: Configure
+      - name: Configure (Ninja)
         shell: cmd
         run: |
-          cd %TBUILD%\tdesktop\Telegram
-          configure.bat x64 ^
-            -D TDESKTOP_API_ID=2040 ^
-            -D TDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 ^
-            -D CMAKE_CONFIGURATION_TYPES=Debug
+          if not exist %TBUILD%\tdesktop\out mkdir %TBUILD%\tdesktop\out
+          cd %TBUILD%\tdesktop\out
+          cmake -G "Ninja Multi-Config" ^
+            -DCMAKE_CONFIGURATION_TYPES=Debug ^
+            -DTDESKTOP_API_ID=2040 ^
+            -DTDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 ^
+            -DDESKTOP_APP_DISABLE_AUTOUPDATE=ON ^
+            -DDESKTOP_APP_DISABLE_CRASH_REPORTS=ON ^
+            -Werror=dev -Werror=deprecated --warn-uninitialized ^
+            ..
 
       - name: Build
         shell: cmd
