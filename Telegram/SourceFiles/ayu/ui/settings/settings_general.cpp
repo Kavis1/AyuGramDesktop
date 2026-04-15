@@ -20,6 +20,8 @@
 #include "styles/style_menu_icons.h"
 #include "styles/style_settings.h"
 #include "ui/boxes/single_choice_box.h"
+#include "ui/layers/generic_box.h"
+#include "ui/widgets/fields/input_field.h"
 #include "ui/toast/toast.h"
 #include "ui/widgets/buttons.h"
 #include "ui/wrap/vertical_layout.h"
@@ -239,8 +241,76 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 		.getter = &AyuSettings::showMessageSeconds,
 		.setter = &AyuSettings::setShowMessageSeconds,
 	});
+	ayu.addSettingToggle({
+		.id = u"ayu/blockMediaWithoutProxy"_q,
+		.title = tr::ayu_BlockMediaWithoutProxy(),
+		.getter = &AyuSettings::blockMediaWithoutProxy,
+		.setter = &AyuSettings::setBlockMediaWithoutProxy,
+	});
 
 	BuildShowPeerId(builder);
+
+	ayu.addSectionDivider();
+
+	builder.addSubsectionTitle(tr::ayu_AiSettings());
+
+	const auto settings = &AyuSettings::getInstance();
+	const auto addAiField = [&](
+			const QString &id,
+			rpl::producer<QString> title,
+			Fn<QString()> getter,
+			Fn<void(const QString &)> setter,
+			bool password = false) {
+		const auto label = getter();
+		builder.addButton({
+			.id = id,
+			.title = std::move(title),
+			.st = &st::settingsButtonNoIcon,
+			.label = rpl::single(
+				password
+					? (label.isEmpty()
+						? QString()
+						: QString(label.size(), QChar(0x2022)))
+					: (label.isEmpty()
+						? tr::ayu_FontDefault(tr::now)
+						: label)),
+			.onClick = [=] {
+				auto box = Box([=](not_null<Ui::GenericBox*> box) {
+					box->setTitle(rpl::single(id));
+					const auto field = box->addRow(
+						object_ptr<Ui::InputField>(
+							box,
+							st::defaultInputField,
+							rpl::single(id),
+							getter()));
+					box->addButton(tr::lng_settings_save(), [=] {
+						setter(field->getLastText());
+						box->closeBox();
+					});
+					box->addButton(tr::lng_cancel(), [=] {
+						box->closeBox();
+					});
+				});
+				builder.controller()->show(std::move(box));
+			},
+		});
+	};
+	addAiField(
+		u"ayu/customAiApiUrl"_q,
+		tr::ayu_CustomAiApiUrl(),
+		[=] { return settings->customAiApiUrl(); },
+		[](const QString &v) { AyuSettings::getInstance().setCustomAiApiUrl(v); });
+	addAiField(
+		u"ayu/customAiApiKey"_q,
+		tr::ayu_CustomAiApiKey(),
+		[=] { return settings->customAiApiKey(); },
+		[](const QString &v) { AyuSettings::getInstance().setCustomAiApiKey(v); },
+		true);
+	addAiField(
+		u"ayu/customAiModel"_q,
+		tr::ayu_CustomAiModel(),
+		[=] { return settings->customAiModel(); },
+		[](const QString &v) { AyuSettings::getInstance().setCustomAiModel(v); });
 
 	ayu.addSectionDivider();
 

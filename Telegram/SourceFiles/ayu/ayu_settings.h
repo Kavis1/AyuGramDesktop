@@ -329,6 +329,10 @@ public:
 	[[nodiscard]] bool crashReporting() const { return _crashReporting.current(); }
 	[[nodiscard]] int avatarCorners() const { return _avatarCorners.current(); }
 	[[nodiscard]] bool singleCornerRadius() const { return _singleCornerRadius.current(); }
+	[[nodiscard]] bool blockMediaWithoutProxy() const { return _blockMediaWithoutProxy.current(); }
+	[[nodiscard]] const QString &customAiApiUrl() const { return _customAiApiUrl.current(); }
+	[[nodiscard]] const QString &customAiApiKey() const { return _customAiApiKey.current(); }
+	[[nodiscard]] const QString &customAiModel() const { return _customAiModel.current(); }
 
 	void setSaveDeletedMessages(bool val);
 	void setSaveMessagesHistory(bool val);
@@ -413,6 +417,10 @@ public:
 	void setCrashReporting(bool val);
 	void setAvatarCorners(int val);
 	void setSingleCornerRadius(bool val);
+	void setBlockMediaWithoutProxy(bool val);
+	void setCustomAiApiUrl(const QString &val);
+	void setCustomAiApiKey(const QString &val);
+	void setCustomAiModel(const QString &val);
 
 	[[nodiscard]] rpl::producer<bool> useGlobalGhostModeValue() const { return _useGlobalGhostMode.value(); }
 	[[nodiscard]] rpl::producer<bool> useGlobalGhostModeChanges() const { return _useGlobalGhostMode.changes(); }
@@ -582,6 +590,8 @@ public:
 	[[nodiscard]] rpl::producer<int> avatarCornersChanges() const { return _avatarCorners.changes(); }
 	[[nodiscard]] rpl::producer<bool> singleCornerRadiusValue() const { return _singleCornerRadius.value(); }
 	[[nodiscard]] rpl::producer<bool> singleCornerRadiusChanges() const { return _singleCornerRadius.changes(); }
+	[[nodiscard]] rpl::producer<bool> blockMediaWithoutProxyValue() const { return _blockMediaWithoutProxy.value(); }
+	[[nodiscard]] rpl::producer<bool> blockMediaWithoutProxyChanges() const { return _blockMediaWithoutProxy.changes(); }
 
 	friend void to_json(nlohmann::json &j, const AyuSettings &s);
 	friend void from_json(const nlohmann::json &j, AyuSettings &s);
@@ -675,6 +685,10 @@ private:
 	rpl::variable<bool> _crashReporting = true;
 	rpl::variable<int> _avatarCorners = 23;
 	rpl::variable<bool> _singleCornerRadius = false;
+	rpl::variable<bool> _blockMediaWithoutProxy = false;
+	rpl::variable<QString> _customAiApiUrl = QString("https://api.openai.com/v1");
+	rpl::variable<QString> _customAiApiKey;
+	rpl::variable<QString> _customAiModel = QString("gpt-4o-mini");
 
 	rpl::variable<bool> _useGlobalGhostMode = true;
 	std::map<uint64, std::unique_ptr<GhostModeAccountSettings>> _ghostAccounts;

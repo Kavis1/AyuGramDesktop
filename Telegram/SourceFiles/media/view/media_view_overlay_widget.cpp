@@ -4351,7 +4351,11 @@ void OverlayWidget::displayDocument(
 				&& initStreaming(startStreaming)) {
 			} else if (_document->isVideoFile()) {
 				_documentMedia->automaticLoad(fileOrigin(), _message);
-				initStreamingThumbnail();
+				if (_document->useStreamingLoader()
+					&& tryForceInitStreaming(startStreaming)) {
+				} else {
+					initStreamingThumbnail();
+				}
 			} else if (_document->isTheme()) {
 				_documentMedia->automaticLoad(fileOrigin(), _message);
 				initThemePreview();
@@ -4614,6 +4618,39 @@ bool OverlayWidget::initStreaming(const StartStreaming &startStreaming) {
 		}
 		updatePlaybackState();
 	}
+	return true;
+}
+
+bool OverlayWidget::tryForceInitStreaming(
+		const StartStreaming &startStreaming) {
+	if (_streamed) {
+		return true;
+	}
+	initStreamingThumbnail();
+	if (!createStreamingObjects()) {
+		return false;
+	}
+
+	Core::App().updateNonIdle();
+
+	_streamed->instance.player().updates(
+	) | rpl::on_next_error([=](Streaming::Update &&update) {
+		handleStreamingUpdate(std::move(update));
+	}, [=](Streaming::Error &&error) {
+		handleStreamingError(std::move(error));
+	}, _streamed->instance.lifetime());
+
+	_streamed->instance.switchQualityRequests(
+	) | rpl::filter([=](int quality) {
+		return !_quality.manual && _quality.height != quality;
+	}) | rpl::on_next([=](int quality) {
+		applyVideoQuality({
+			.manual = 0,
+			.height = uint32(quality),
+		});
+	}, _streamed->instance.lifetime());
+
+	startStreamingPlayer(startStreaming);
 	return true;
 }
 

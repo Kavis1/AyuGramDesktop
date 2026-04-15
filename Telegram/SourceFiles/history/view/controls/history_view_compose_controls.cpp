@@ -115,6 +115,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 // AyuGram includes
 #include "ayu/ayu_settings.h"
+#include "ayu/features/ayu_custom_ai.h"
 #include "history/history_item_components.h"
 
 
@@ -3792,6 +3793,10 @@ void ComposeControls::showAiComposeBox() {
 	if (text.text.isEmpty()) {
 		return;
 	}
+	if (AyuCustomAi::isConfigured()) {
+		showCustomAiMenu(text);
+		return;
+	}
 	auto send = Fn<void(TextWithEntities, Api::SendOptions, Fn<void()>)>();
 	auto setupMenu = Fn<void(
 		not_null<Ui::RpWidget*>,
@@ -3823,6 +3828,75 @@ void ComposeControls::showAiComposeBox() {
 		.send = std::move(send),
 		.setupMenu = std::move(setupMenu),
 	});
+}
+
+void ComposeControls::showCustomAiMenu(const TextWithEntities &text) {
+	struct AiAction {
+		QString label;
+		QString prompt;
+	};
+	const auto actions = std::vector<AiAction>{
+		{
+			tr::ayu_AiFixSpelling(tr::now),
+			"Fix all spelling and grammar errors in the following text. "
+			"Return ONLY the corrected text, nothing else. "
+			"Keep the same language."
+		},
+		{
+			tr::ayu_AiMakeFormal(tr::now),
+			"Rewrite the following text in a more formal, professional tone. "
+			"Return ONLY the rewritten text, nothing else. "
+			"Keep the same language."
+		},
+		{
+			tr::ayu_AiMakeFriendly(tr::now),
+			"Rewrite the following text in a more friendly, casual tone. "
+			"Return ONLY the rewritten text, nothing else. "
+			"Keep the same language."
+		},
+		{
+			tr::ayu_AiImproveText(tr::now),
+			"Improve the following text: make it clearer, more concise, "
+			"and better structured. Return ONLY the improved text, nothing "
+			"else. Keep the same language."
+		},
+	};
+
+	auto menu = base::make_unique_q<Ui::PopupMenu>(
+		_wrap.get(),
+		st::popupMenuWithIcons);
+	for (const auto &action : actions) {
+		const auto prompt = action.prompt;
+		const auto sourceText = text.text;
+		menu->addAction(action.label, crl::guard(_wrap.get(), [=] {
+			_show->showToast(tr::ayu_AiProcessing(tr::now));
+			AyuCustomAi::sendRequest(
+				prompt,
+				sourceText,
+				crl::guard(_wrap.get(), [=](
+						const QString &result,
+						const QString &error) {
+					crl::on_main([=] {
+						if (!error.isEmpty()) {
+							_show->showToast(
+								tr::ayu_AiError(
+									tr::now,
+									lt_error,
+									error));
+							return;
+						}
+						const auto action =
+							Ui::InputField::HistoryAction::NewEntry;
+						setFieldText(
+							{ result, {} },
+							TextUpdateEvent::SaveDraft,
+							action);
+					});
+				}));
+		}));
+	}
+	menu->popup(QCursor::pos());
+	_aiMenu = std::move(menu);
 }
 
 bool ComposeControls::canSendAiComposeDirect() const {

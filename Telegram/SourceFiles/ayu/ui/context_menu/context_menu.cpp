@@ -17,6 +17,7 @@
 #include "ayu/ui/context_menu/menu_item_subtext.h"
 #include "ayu/ui/message_history/history_section.h"
 #include "ayu/ui/settings/filters/edit_filter.h"
+#include "ayu/features/ayu_custom_ai.h"
 #include "ayu/utils/qt_key_modifiers_extended.h"
 #include "ayu/utils/telegram_helpers.h"
 #include "base/call_delayed.h"
@@ -863,6 +864,74 @@ void AddCreateFilterAction(not_null<Ui::PopupMenu*> menu,
 			controller->show(Settings::RegexEditBox(&filter, {}, getDialogIdFromPeer(item->history()->peer), true));
 		},
 		&st::menuIconAddToFolder);
+}
+
+void AddAiSummarizeAction(
+		not_null<Ui::PopupMenu*> menu,
+		not_null<Window::SessionController*> controller,
+		HistoryItem *item) {
+	if (!item || !AyuCustomAi::isConfigured()) {
+		return;
+	}
+
+	const auto history = item->history();
+	menu->addAction(
+		tr::ayu_AiSummarizeChat(tr::now),
+		[=] {
+			constexpr auto kDefaultCount = 50;
+			auto texts = QStringList();
+			auto count = 0;
+
+			for (auto i = history->blocks.size(); i > 0 && count < kDefaultCount;) {
+				--i;
+				const auto &block = history->blocks[i];
+				for (auto j = block->messages.size(); j > 0 && count < kDefaultCount;) {
+					--j;
+					const auto msg = block->messages[j]->data();
+					auto text = msg->originalText().text;
+					if (text.isEmpty()) {
+						continue;
+					}
+					const auto from = msg->from()
+						? msg->from()->name()
+						: QString("Unknown");
+					texts.prepend(from + ": " + text);
+					++count;
+				}
+			}
+
+			if (texts.isEmpty()) {
+				return;
+			}
+
+			const auto joined = texts.join("\n");
+			const auto show = controller->uiShow();
+
+			show->showToast(tr::ayu_AiProcessing(tr::now));
+
+			AyuCustomAi::sendRequest(
+				"You are a helpful assistant. Summarize the following chat "
+				"messages concisely. Highlight key points, decisions, and "
+				"action items if any. Check facts if possible. Respond in "
+				"the same language as the messages.",
+				joined,
+				[show](const QString &result, const QString &error) {
+					crl::on_main([=] {
+						if (!error.isEmpty()) {
+							show->showToast(
+								tr::ayu_AiError(
+									tr::now,
+									lt_error,
+									error));
+							return;
+						}
+						show->showBox(
+							Ui::MakeInformBox(
+								TextWithEntities{ result }));
+					});
+				});
+		},
+		&st::menuIconInfo);
 }
 
 } // namespace AyuUi

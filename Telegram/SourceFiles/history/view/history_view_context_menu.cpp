@@ -1563,6 +1563,13 @@ base::unique_qptr<Ui::PopupMenu> FillContextMenu(
 				});
 		});
 	}
+
+	if (item) {
+		AyuUi::AddAiSummarizeAction(
+			result.get(),
+			list->controller(),
+			item);
+	}
 	return result;
 }
 

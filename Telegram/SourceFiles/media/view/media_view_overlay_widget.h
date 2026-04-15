@@ -426,6 +426,8 @@ private:
 
 	bool initStreaming(
 		const StartStreaming &startStreaming = StartStreaming());
+	bool tryForceInitStreaming(
+		const StartStreaming &startStreaming = StartStreaming());
 	void startStreamingPlayer(const StartStreaming &startStreaming);
 	void initStreamingThumbnail();
 	void markStreamedReady();

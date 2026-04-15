@@ -68,6 +68,7 @@ class EmojiButton;
 class SendAsButton;
 class SilentToggle;
 class DropdownMenu;
+class PopupMenu;
 struct PreparedBundle;
 struct PreparedList;
 struct SendStarButtonState;
@@ -370,6 +371,7 @@ private:
 	void createTabbedPanel();
 	void setTabbedPanel(std::unique_ptr<ChatHelpers::TabbedPanel> panel);
 	void showAiComposeBox();
+	void showCustomAiMenu(const TextWithEntities &text);
 	[[nodiscard]] bool canSendAiComposeDirect() const;
 
 	[[nodiscard]] bool showRecordButton() const;
@@ -457,6 +459,7 @@ private:
 
 	const std::shared_ptr<Ui::SendButton> _send;
 	Controls::ComposeAiButton * const _aiButton = nullptr;
+	base::unique_qptr<Ui::PopupMenu> _aiMenu;
 	Ui::IconButton * const _sendAsFile = nullptr;
 	Ui::IconButton *_editStars = nullptr;
 	Ui::IconButton *_like = nullptr;
