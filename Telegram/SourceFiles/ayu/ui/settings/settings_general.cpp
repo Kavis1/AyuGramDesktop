@@ -254,7 +254,6 @@ void BuildQoLToggles(SectionBuilder &builder, AyuSectionBuilder &ayu) {
 
 	builder.addSubsectionTitle(tr::ayu_AiSettings());
 
-	const auto settings = &AyuSettings::getInstance();
 	const auto addAiField = [&](
 			const QString &id,
 			rpl::producer<QString> title,
