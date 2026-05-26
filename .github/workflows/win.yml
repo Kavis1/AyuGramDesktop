@@ -157,6 +157,8 @@ jobs:
           find "$LibrariesPath" '(' '(' ! '(' -name '*.lib' -o -name '*.a' -o -name '*.exe' -o -name '*.h' -o -name '*.hpp' -o -name '*.inc' -o -name '*.cmake' -o -path '*/include/*' -o -path '*/objects-*' -o -path '*/cache_keys/*' -o -path '*/patches/*' ')' -type f ')' -o -empty ')' -delete 2>/dev/null || true
 
       - name: Configure.
+        env:
+          QT: 5.15.18
         run: |
           if not exist %TBUILD%\%REPO_NAME%\out mkdir %TBUILD%\%REPO_NAME%\out
           cd %TBUILD%\%REPO_NAME%\out
