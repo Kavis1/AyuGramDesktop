@@ -13,7 +13,7 @@ Copyright @Radolyn, 2026
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QNetworkRequest>
+#include <QtNetwork/QNetworkRequest>
 
 namespace AyuCustomAi {
 namespace {

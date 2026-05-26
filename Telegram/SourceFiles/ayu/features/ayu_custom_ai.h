@@ -8,8 +8,8 @@ Copyright @Radolyn, 2026
 */
 #pragma once
 
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
+#include <QtNetwork/QNetworkAccessManager>
+#include <QtNetwork/QNetworkReply>
 #include <functional>
 
 namespace AyuCustomAi {
