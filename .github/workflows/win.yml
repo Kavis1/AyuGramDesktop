@@ -178,7 +178,17 @@ jobs:
       - name: Collect artifacts.
         run: |
           mkdir %TBUILD%\artifact
-          move %TBUILD%\%REPO_NAME%\out\Debug\Telegram.exe %TBUILD%\artifact\AyuGram.exe
+          dir %TBUILD%\%REPO_NAME%\out\Debug
+          if exist %TBUILD%\%REPO_NAME%\out\Debug\AyuGram.exe (
+            move %TBUILD%\%REPO_NAME%\out\Debug\AyuGram.exe %TBUILD%\artifact\AyuGram.exe
+          ) else (
+            if exist %TBUILD%\%REPO_NAME%\out\Debug\Telegram.exe (
+              move %TBUILD%\%REPO_NAME%\out\Debug\Telegram.exe %TBUILD%\artifact\AyuGram.exe
+            ) else (
+              echo ERROR: neither AyuGram.exe nor Telegram.exe found in out\Debug
+              exit /b 1
+            )
+          )
           if exist %TBUILD%\%REPO_NAME%\out\Debug\Updater.exe (
             move %TBUILD%\%REPO_NAME%\out\Debug\Updater.exe %TBUILD%\artifact\Updater.exe
           )
