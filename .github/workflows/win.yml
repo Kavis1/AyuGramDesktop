@@ -49,13 +49,14 @@ jobs:
           SDK="$(grep -oP '\d+\.\d+\.\d+\.\d+' "$DOCPATH" | head -1)"
           echo "SDK=$SDK" >> $GITHUB_ENV
 
-          # Strip /Zi from default debug flags so library builds do not produce
-          # tens of GB of PDBs and exhaust runner disk space.
-          sed -i '/CMAKE_${lang}_FLAGS_DEBUG_INIT/s/${_Zi}//' \
+          # Strip /Zi from default Debug/RelWithDebInfo flags so library builds do
+          # not produce tens of GB of PDBs and exhaust runner disk space.
+          sed -i -E '/CMAKE_\$\{lang\}_FLAGS_(DEBUG|RELWITHDEBINFO)_INIT/s/\$\{_Zi\}//' \
             "$PROGRAMFILES"/CMake/share/cmake*/Modules/Platform/Windows-MSVC.cmake || true
 
           echo "$(sha256sum "$TBUILD/$REPO_NAME/$PREPARE_PATH" | awk '{ print $1 }')" >> CACHE_KEY.txt
           echo "$SDK" >> CACHE_KEY.txt
+          echo "release-v1" >> CACHE_KEY.txt
           echo "CACHE_KEY=$(sha256sum CACHE_KEY.txt | awk '{ print $1 }')" >> $GITHUB_ENV
 
           git config --global user.email "ci@ayugram.local"
@@ -147,9 +148,9 @@ jobs:
         env:
           GYP_MSVS_OVERRIDE_PATH: 'C:\Program Files\Microsoft Visual Studio\2022\Enterprise\'
           GYP_MSVS_VERSION: 2022
-        timeout-minutes: 180
+        timeout-minutes: 300
         run: |
-          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat skip-release silent
+          %TBUILD%\%REPO_NAME%\Telegram\build\prepare\win.bat silent
 
       - name: Trim Libraries (drop intermediates).
         shell: bash
@@ -163,7 +164,7 @@ jobs:
           if not exist %TBUILD%\%REPO_NAME%\out mkdir %TBUILD%\%REPO_NAME%\out
           cd %TBUILD%\%REPO_NAME%\out
           cmake -G "Ninja Multi-Config" ^
-            -DCMAKE_CONFIGURATION_TYPES=Debug ^
+            -DCMAKE_CONFIGURATION_TYPES=Release ^
             -DCMAKE_MSVC_DEBUG_INFORMATION_FORMAT= ^
             -DTDESKTOP_API_ID=2040 ^
             -DTDESKTOP_API_HASH=b18441a1ff607e10a989891a5462e627 ^
@@ -173,28 +174,28 @@ jobs:
 
       - name: Build.
         run: |
-          cmake --build %TBUILD%\%REPO_NAME%\out --config Debug --parallel
+          cmake --build %TBUILD%\%REPO_NAME%\out --config Release --parallel
 
       - name: Collect artifacts.
         run: |
           mkdir %TBUILD%\artifact
-          dir %TBUILD%\%REPO_NAME%\out\Debug
-          if exist %TBUILD%\%REPO_NAME%\out\Debug\AyuGram.exe (
-            move %TBUILD%\%REPO_NAME%\out\Debug\AyuGram.exe %TBUILD%\artifact\AyuGram.exe
+          dir %TBUILD%\%REPO_NAME%\out\Release
+          if exist %TBUILD%\%REPO_NAME%\out\Release\AyuGram.exe (
+            move %TBUILD%\%REPO_NAME%\out\Release\AyuGram.exe %TBUILD%\artifact\AyuGram.exe
           ) else (
-            if exist %TBUILD%\%REPO_NAME%\out\Debug\Telegram.exe (
-              move %TBUILD%\%REPO_NAME%\out\Debug\Telegram.exe %TBUILD%\artifact\AyuGram.exe
+            if exist %TBUILD%\%REPO_NAME%\out\Release\Telegram.exe (
+              move %TBUILD%\%REPO_NAME%\out\Release\Telegram.exe %TBUILD%\artifact\AyuGram.exe
             ) else (
-              echo ERROR: neither AyuGram.exe nor Telegram.exe found in out\Debug
+              echo ERROR: neither AyuGram.exe nor Telegram.exe found in out\Release
               exit /b 1
             )
           )
-          if exist %TBUILD%\%REPO_NAME%\out\Debug\Updater.exe (
-            move %TBUILD%\%REPO_NAME%\out\Debug\Updater.exe %TBUILD%\artifact\Updater.exe
+          if exist %TBUILD%\%REPO_NAME%\out\Release\Updater.exe (
+            move %TBUILD%\%REPO_NAME%\out\Release\Updater.exe %TBUILD%\artifact\Updater.exe
           )
 
       - name: Upload artifacts.
         uses: actions/upload-artifact@v4
         with:
-          name: AyuGram-Windows-x64-Debug
+          name: AyuGram-Windows-x64-Release
           path: ${{ env.TBUILD }}\artifact\

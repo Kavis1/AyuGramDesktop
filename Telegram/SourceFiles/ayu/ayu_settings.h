@@ -592,6 +592,12 @@ public:
 	[[nodiscard]] rpl::producer<bool> singleCornerRadiusChanges() const { return _singleCornerRadius.changes(); }
 	[[nodiscard]] rpl::producer<bool> blockMediaWithoutProxyValue() const { return _blockMediaWithoutProxy.value(); }
 	[[nodiscard]] rpl::producer<bool> blockMediaWithoutProxyChanges() const { return _blockMediaWithoutProxy.changes(); }
+	[[nodiscard]] rpl::producer<QString> customAiApiUrlValue() const { return _customAiApiUrl.value(); }
+	[[nodiscard]] rpl::producer<QString> customAiApiUrlChanges() const { return _customAiApiUrl.changes(); }
+	[[nodiscard]] rpl::producer<QString> customAiApiKeyValue() const { return _customAiApiKey.value(); }
+	[[nodiscard]] rpl::producer<QString> customAiApiKeyChanges() const { return _customAiApiKey.changes(); }
+	[[nodiscard]] rpl::producer<QString> customAiModelValue() const { return _customAiModel.value(); }
+	[[nodiscard]] rpl::producer<QString> customAiModelChanges() const { return _customAiModel.changes(); }
 
 	friend void to_json(nlohmann::json &j, const AyuSettings &s);
 	friend void from_json(const nlohmann::json &j, AyuSettings &s);

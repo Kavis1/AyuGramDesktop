@@ -534,6 +534,7 @@ private:
 	void updateAiButtonVisibility();
 	void updateAiButtonGeometry();
 	void showAiComposeBox();
+	void showCustomAiMenu(const TextWithEntities &text);
 	void initSendAsFileButton();
 	void sendTextAsFile(
 		const QString &fileText,
@@ -849,6 +850,7 @@ private:
 
 	const std::shared_ptr<Ui::SendButton> _send;
 	HistoryView::Controls::ComposeAiButton * const _aiButton = nullptr;
+	base::unique_qptr<Ui::PopupMenu> _aiMenu;
 	Ui::IconButton * const _sendAsFile = nullptr;
 	object_ptr<Ui::FlatButton> _unblock;
 	object_ptr<Ui::FlatButton> _botStart;

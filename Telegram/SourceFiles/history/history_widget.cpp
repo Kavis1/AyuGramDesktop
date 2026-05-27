@@ -204,6 +204,7 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 // AyuGram includes
 #include "ayu/ayu_settings.h"
+#include "ayu/features/ayu_custom_ai.h"
 #include "ayu/features/filters/filters_cache_controller.h"
 #include "ayu/utils/telegram_helpers.h"
 #include "ayu/features/message_shot/message_shot.h"
@@ -859,6 +860,9 @@ HistoryWidget::HistoryWidget(
 		AyuSettings::getInstance().showAutoDeleteButtonInMessageFieldChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showGiftButtonInMessageFieldChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showAiEditorButtonInMessageFieldChanges() | rpl::to_empty,
+		AyuSettings::getInstance().customAiApiKeyChanges() | rpl::to_empty,
+		AyuSettings::getInstance().customAiApiUrlChanges() | rpl::to_empty,
+		AyuSettings::getInstance().customAiModelChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showAttachPopupChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showEmojiPopupChanges() | rpl::to_empty,
 		AyuSettings::getInstance().channelBottomButtonChanges() | rpl::to_empty,
@@ -4882,6 +4886,10 @@ void HistoryWidget::showAiComposeBox() {
 	if (text.text.isEmpty()) {
 		return;
 	}
+	if (AyuCustomAi::isConfigured()) {
+		showCustomAiMenu(text);
+		return;
+	}
 	auto send = Fn<void(TextWithEntities &&, Api::SendOptions, Fn<void()>)>(
 		nullptr);
 	auto setupMenu = Fn<void(
@@ -4918,6 +4926,81 @@ void HistoryWidget::showAiComposeBox() {
 		.send = std::move(send),
 		.setupMenu = std::move(setupMenu),
 	});
+}
+
+void HistoryWidget::showCustomAiMenu(const TextWithEntities &text) {
+	struct AiAction {
+		QString label;
+		QString prompt;
+	};
+	const auto actions = std::vector<AiAction>{
+		{
+			tr::ayu_AiFixSpelling(tr::now),
+			"Fix all spelling and grammar errors in the following text. "
+			"Return ONLY the corrected text, nothing else. "
+			"Keep the same language."
+		},
+		{
+			tr::ayu_AiMakeFormal(tr::now),
+			"Rewrite the following text in a more formal, professional tone. "
+			"Return ONLY the rewritten text, nothing else. "
+			"Keep the same language."
+		},
+		{
+			tr::ayu_AiMakeFriendly(tr::now),
+			"Rewrite the following text in a more friendly, casual tone. "
+			"Return ONLY the rewritten text, nothing else. "
+			"Keep the same language."
+		},
+		{
+			tr::ayu_AiImproveText(tr::now),
+			"Improve the following text: make it clearer, more concise, "
+			"and better structured. Return ONLY the improved text, nothing "
+			"else. Keep the same language."
+		},
+	};
+
+	auto menu = base::make_unique_q<Ui::PopupMenu>(
+		this,
+		st::popupMenuWithIcons);
+	const auto show = controller()->uiShow();
+	const auto guarded = crl::guard(this, [=](
+			const QString &prompt,
+			const QString &sourceText) {
+		show->showToast(tr::ayu_AiProcessing(tr::now));
+		AyuCustomAi::sendRequest(
+			prompt,
+			sourceText,
+			crl::guard(this, [=](
+					const QString &result,
+					const QString &error) {
+				crl::on_main(this, [=] {
+					if (!error.isEmpty()) {
+						show->showToast(
+							tr::ayu_AiError(
+								tr::now,
+								lt_error,
+								error));
+						return;
+					}
+					const auto action =
+						Ui::InputField::HistoryAction::NewEntry;
+					setFieldText(
+						{ result, {} },
+						TextUpdateEvent::SaveDraft,
+						action);
+				});
+			}));
+	});
+	const auto sourceText = text.text;
+	for (const auto &action : actions) {
+		const auto prompt = action.prompt;
+		menu->addAction(action.label, [=] {
+			guarded(prompt, sourceText);
+		});
+	}
+	menu->popup(QCursor::pos());
+	_aiMenu = std::move(menu);
 }
 
 void HistoryWidget::saveEditMessage(Api::SendOptions options) {
@@ -6524,9 +6607,11 @@ bool HistoryWidget::fieldOrDisabledShown() const {
 }
 
 bool HistoryWidget::hasEnoughLinesForAi() const {
-	return _history
-		&& !_voiceRecordBar->isActive()
-		&& Ui::HasEnoughLinesForAi(&session(), _field);
+	if (!_history || _voiceRecordBar->isActive()) {
+		return false;
+	}
+	return Ui::HasEnoughLinesForAi(&session(), _field)
+		|| Ui::HasCustomAiAvailable(_field);
 }
 
 bool HistoryWidget::textExceedsMaxSize() const {

@@ -24,25 +24,14 @@ https://github.com/telegramdesktop/tdesktop/blob/master/LEGAL
 
 // AyuGram includes
 #include "ayu/ayu_settings.h"
+#include "ayu/features/ayu_custom_ai.h"
 
 
 namespace Ui {
+namespace {
 
-const char kOptionHideAiButton[] = "hide-ai-button";
-
-base::options::toggle HideAiButtonOption({
-	.id = kOptionHideAiButton,
-	.name = "Hide AI button",
-	.description = "Hide the AI Tools button in message compose fields.",
-});
-
-bool HasEnoughLinesForAi(
-		not_null<Main::Session*> session,
+[[nodiscard]] bool FieldHasGeometryAndTextForAi(
 		not_null<Ui::InputField*> field) {
-	if (!AyuSettings::getInstance().showAiEditorButtonInMessageField()
-		|| session->appConfig().aiComposeStyles().empty()) {
-		return false;
-	}
 	const auto &style = field->st().style;
 	const auto lineHeight = style.lineHeight
 		? style.lineHeight
@@ -64,6 +53,35 @@ bool HasEnoughLinesForAi(
 		}
 	}
 	return false;
+}
+
+} // namespace
+
+const char kOptionHideAiButton[] = "hide-ai-button";
+
+base::options::toggle HideAiButtonOption({
+	.id = kOptionHideAiButton,
+	.name = "Hide AI button",
+	.description = "Hide the AI Tools button in message compose fields.",
+});
+
+bool HasEnoughLinesForAi(
+		not_null<Main::Session*> session,
+		not_null<Ui::InputField*> field) {
+	if (!AyuSettings::getInstance().showAiEditorButtonInMessageField()
+		|| session->appConfig().aiComposeStyles().empty()) {
+		return false;
+	}
+	return FieldHasGeometryAndTextForAi(field);
+}
+
+bool HasCustomAiAvailable(
+		not_null<Ui::InputField*> field) {
+	if (!AyuSettings::getInstance().showAiEditorButtonInMessageField()
+		|| !AyuCustomAi::isConfigured()) {
+		return false;
+	}
+	return FieldHasGeometryAndTextForAi(field);
 }
 
 PreparedList PrepareTextAsFile(const QString &text) {

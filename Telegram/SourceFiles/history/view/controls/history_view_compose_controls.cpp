@@ -2270,6 +2270,9 @@ void ComposeControls::init() {
 		AyuSettings::getInstance().showMicrophoneButtonInMessageFieldChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showAutoDeleteButtonInMessageFieldChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showAiEditorButtonInMessageFieldChanges() | rpl::to_empty,
+		AyuSettings::getInstance().customAiApiKeyChanges() | rpl::to_empty,
+		AyuSettings::getInstance().customAiApiUrlChanges() | rpl::to_empty,
+		AyuSettings::getInstance().customAiModelChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showAttachPopupChanges() | rpl::to_empty,
 		AyuSettings::getInstance().showEmojiPopupChanges() | rpl::to_empty,
 		AyuSettings::getInstance().channelBottomButtonChanges() | rpl::to_empty,
@@ -3909,9 +3912,11 @@ bool ComposeControls::canSendAiComposeDirect() const {
 }
 
 bool ComposeControls::hasEnoughLinesForAi() const {
-	return _history
-		&& !_recording.current()
-		&& Ui::HasEnoughLinesForAi(&session(), _field);
+	if (!_history || _recording.current()) {
+		return false;
+	}
+	return Ui::HasEnoughLinesForAi(&session(), _field)
+		|| Ui::HasCustomAiAvailable(_field);
 }
 
 bool ComposeControls::textExceedsMaxSize() const {
