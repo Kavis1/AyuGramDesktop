@@ -24,6 +24,7 @@ public:
 
 private:
 	void setupContent();
+
 };
 
 [[nodiscard]] Type AyuMainId();
